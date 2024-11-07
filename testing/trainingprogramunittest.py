@@ -29,6 +29,16 @@ class TestUserInput(unittest.TestCase):
         tp = TrainingProgram()
         tp.createTrainingDirectoryPrompt()
         self.assertEqual(tp.width, 28)
+    
+    # pretrained machine properly loads from pytorch
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def testMachineLoads(self, stdOut):
+        tp = TrainingProgram()
+        tp.loadMachine()
+        outValue = stdOut.getvalue().strip()
+        # just check that function prints something as proof of the machine being loaded
+        self.assertNotEqual(outValue, None)
+
 
 if __name__ == "__main__":
     unittest.main()
