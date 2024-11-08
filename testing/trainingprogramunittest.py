@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+import numpy as np
 import io
 import sys
 import os
@@ -38,6 +39,24 @@ class TestUserInput(unittest.TestCase):
         outValue = stdOut.getvalue().strip()
         # just check that function prints something as proof of the machine being loaded
         self.assertNotEqual(outValue, None)
+
+    # mock machine properly saves weights to csv file
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def testSavesMachine(self, stdOut):
+        # create mock machine model
+        mockModel = MagicMock()
+        mockModel.named_parameters.return_value = [
+            ("layer1.weight", MagicMock(data=np.random.rand(64, 3, 7, 7))),
+            ("layer2.weight", MagicMock(data=np.random.rand(128, 64, 3, 3))),
+        ]
+        tp = TrainingProgram()
+        tp.model = mockModel
+        tp.saveWeights('test.csv')
+        outValue = stdOut.getvalue().strip()
+        self.assertEqual(outValue, "File, test.csv, created.\nModel weights saved to test.csv")
+        # remove csv file after testing
+        if os.path.exists('test.csv'):
+            os.remove('test.csv')
 
 
 if __name__ == "__main__":
