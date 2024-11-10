@@ -20,5 +20,18 @@ class TestUserChoice:
         (result, fileObject) = tp.takeInput()
         self.assertEqual(result, 0)
 
-    
+    @patch.object(TestingProgram, 'classificationStub', return_value = ('A', .96))
+    def testCorrectLetterOutput(self):
+        tp = TestingProgram()
+        (result, accuracy) = tp.classifyImage()
+        self.assertEqual(result, 'A')
+
+    @patch.object(TestingProgram, 'classificationStub', return_value = ('A', .96))
+    def testCorrectAccuracyOutput(self):
+        tp = TestingProgram()
+        (result, accuracy) = tp.classifyImage()
+        self.assertEqual(accuracy, .96)
+
         
+if __name__ == "__main__":
+    unittest.main()
