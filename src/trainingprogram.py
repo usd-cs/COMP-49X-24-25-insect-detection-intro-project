@@ -127,7 +127,6 @@ class TrainingProgram:
             with open(filename, "w") as file:
                 file.write('')
             print(f"File, {filename}, created.")
-            
         # Iterate layers and save weights
         for name, param in self.model.named_parameters():
             weights.append({
@@ -135,6 +134,9 @@ class TrainingProgram:
                 "values": param.detach().cpu().numpy().flatten().tolist()
             })
         
+        # save image input height to file for testing
+        file = open(filename, 'w')
+        file.write(str(self.height) + "\n")
         # store into pandas dataframe to store in csv
         df = pd.DataFrame(weights)
         df.to_csv(filename, index=False)
