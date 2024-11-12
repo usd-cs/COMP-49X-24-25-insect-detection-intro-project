@@ -14,6 +14,11 @@ class TestingProgram:
         
         # Initialize a fresh model with weights = None, so there is no weights
         self.model = models.resnet18(weights=None)
+        numFeatures = self.model.fc.in_features
+        self.model.fc = torch.nn.Linear(numFeatures, 10)
+        # use CPU to allow general usability and Metal Performance Shader if user has Apple Silicon
+        self.device = torch.device('mps' if torch.backends.mps.is_built() else 'cpu')
+        self.model = self.model.to(self.device)
 
     def takeInput(self):
         """
