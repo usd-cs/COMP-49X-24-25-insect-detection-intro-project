@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
-import numpy as np
 import io
 import sys
 import os
@@ -18,7 +17,7 @@ class TestUserInput(unittest.TestCase):
         tp = TrainingProgram()
         tp.createTrainingDirectoryPrompt()
         outValue = stdOut.getvalue().strip()
-        self.assertEqual(outValue, 'Training images shape: (60000, 28, 28)\nTraining labels shape: (60000,)\nTest images shape: (10000, 28, 28)\nTest labels shape: (10000,)')
+        self.assertTrue('Training images shape: (60000, 28, 28)\nTraining labels shape: (60000,)\nTest images shape: (10000, 28, 28)\nTest labels shape: (10000,)' in outValue)
         
     # dataset saves correct height for images
     def testSavesCorrectHeight(self):

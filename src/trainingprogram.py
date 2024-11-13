@@ -1,17 +1,14 @@
-import os
-from pathlib import Path
 from tensorflow.keras.datasets import mnist
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
-import pandas as pd
 import torch
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
-import numpy as np
 
 # Custom dataset class for DataLoader object (for training input)
 class CustomDataset(Dataset):
     def __init__(self, images, labels, transform=None):
+        """ Initialization holds images, respective labels, and transform function """
         self.images = images
         self.labels = labels
         self.transform = transform
@@ -19,8 +16,8 @@ class CustomDataset(Dataset):
     def __len__(self):
         return len(self.images)
 
-    # allows image and label access by index + transform
     def __getitem__(self, idx):
+        """ Returns transformed image with corresponding label """
         image = self.images[idx]
         label = self.labels[idx]
 
@@ -32,7 +29,7 @@ class CustomDataset(Dataset):
 class TrainingProgram:
     
     def __init__(self):
-        # initialize class vars
+        """ Initialization of datasets, image size, and model settings """
         self.trainX = None
         self.trainY = None
         self.testX = None
@@ -44,6 +41,11 @@ class TrainingProgram:
         self.transform = None
 
     def createTrainingDirectoryPrompt(self):
+        """
+        Loads keras dataset and saves image height and width
+        
+        Returns: None
+        """
         # load mnist dataset from keras
         (self.trainX, self.trainY), (self.testX, self.testY) = mnist.load_data()
         # take height and width of images from shape property
@@ -56,6 +58,11 @@ class TrainingProgram:
         print(f'Test labels shape: {self.testY.shape}') 
 
     def loadMachine(self):
+        """
+        Properly load machine that is optimized for keras dataset
+        
+        Returns: None
+        """
         # load model with set number of classifications for the last layer, set loss function, and type optimization
         self.model = models.resnet18()
         numFeatures = self.model.fc.in_features
@@ -74,7 +81,15 @@ class TrainingProgram:
         print(f'Final Layer Biases: {self.model.fc.bias.data}')
     
     def trainMachine(self, numEpochs):
+        """
+        Sets type of training for model and trains for entered number of epochs
+        
+        Returns: None
+        """
+
+        # set model to train mode
         self.model.train()
+
         # define loss function, optimization function, and image transformation
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
@@ -100,6 +115,12 @@ class TrainingProgram:
             print(f"Epoch {epoch+1}/{numEpochs}, Loss: {runningLoss/len(dataLoader):.4f}")
     
     def testMachine(self):
+        """
+        Loops through test dataset to evaluate model's accuracy after being trained
+        by training dataset
+        
+        Returns: None
+        """
         # load testing dataset
         dataset = CustomDataset(self.testX, self.testY, transform=self.transform)
         dataLoader = DataLoader(dataset, batch_size=32, shuffle=False)
@@ -119,6 +140,11 @@ class TrainingProgram:
         print(f"Accuracy: {100 * correct / total:.2f}%")
 
     def saveWeights(self, filename, heightFilename):
+        """
+        Saves trained model and image height to files to be used by testing program
+        
+        Returns: None
+        """
         with open(heightFilename, "w") as file:
             file.write(str(self.height))
         print(f"Height saved to, {heightFilename}.")
@@ -131,7 +157,7 @@ if __name__ == "__main__":
     tp = TrainingProgram()
     tp.createTrainingDirectoryPrompt()
     tp.loadMachine()
-    tp.trainMachine(5)
+    tp.trainMachine(5) # may be modified if necessary
     tp.testMachine()
     filename = input("Please enter a file to save weights to (.pth format): ")
     heightFilename = input("Please enter a file to save the standard image height to (.txt): ")
