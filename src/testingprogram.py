@@ -1,15 +1,13 @@
 from torchvision import models, transforms
 import torch
-import pandas as pd
-import ast
 from PIL import Image
+import time
 
 class TestingProgram:
     
     def __init__(self, height = None):
+        """Initialize class variables. User can specify height parameter for model."""
         self.testImage = None
-        if height == None:
-            self.height = 240 # set this to whatever default value we want
         self.height = height
         
         # Initialize a fresh model with weights = None, so there is no weights
@@ -30,7 +28,6 @@ class TestingProgram:
         filePath = input("Please input a file path for an image to process: ")
 
         try:
-            # f = open(filePath, 'r')
             f = Image.open(filePath).convert('RGB')
             self.testImage = f
             return True
@@ -47,7 +44,6 @@ class TestingProgram:
         """
 
         transform = transforms.Compose([
-            # transforms.ToPILImage(),
             transforms.Grayscale(num_output_channels=3),
             transforms.Resize(self.height),
             transforms.ToTensor(),
@@ -77,7 +73,7 @@ class TestingProgram:
         Returns: (Letter identified, Percent accuracy)
         """
 
-        # self.model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+        # set the model to evaluation mode
         self.model.eval()
 
         # Process the self.image object 
@@ -91,7 +87,6 @@ class TestingProgram:
         # Get the predicted class and confidence score
         _, predictedIndex = torch.max(output, 1)
         confidenceScore = torch.nn.functional.softmax(output, dim=1)[0][predictedIndex].item()
-        # predictedCharacter = chr(predictedIndex.item())
         predictedCharacter = predictedIndex.item()
 
         return predictedCharacter, confidenceScore
@@ -107,7 +102,7 @@ class TestingProgram:
             weightsFilePath = input("Please input the file path of the saved weights for the trained model: ")
         if heightFilePath == None:
             heightFilePath = input("Please input the file path of the saved height for the image input: ")
-        # Load weights from pth into a DataFrame
+        # Load weights from pth into the model
         try:
             heightFile = open(heightFilePath, 'r')
             self.height = int(heightFile.readline().strip())
@@ -119,32 +114,35 @@ class TestingProgram:
 
 if __name__ == "__main__":
     testingProgram = TestingProgram()
-    print("\n\n------------   Welcome to Character Identifier!   ------------\n\n")
+    print("\n\n------------   Welcome to Digit Identifier!   ------------\n\n")
 
     testingProgram.loadModelWeights()
 
     while(True):
         testingProgram.takeInput()
+        startTime = time.time()
         predictedCharacter, confidenceScore = testingProgram.classifyImage()
-        # predictedCharacter = chr(predictedCharacter)
+        endTime = time.time()
+        executionTime = round((endTime - startTime) * 1000, 2)
         confidenceScore = round(confidenceScore * 100, 2)
         print(f"\nWe identified the image to be the character: {predictedCharacter}")
         print(f"We have confidence of {confidenceScore}\n")
+        print(f"Digit Identified in {executionTime} ms\n")
         try:
             while True:
-                user_input = input("Enter 1 if you would like to identify another image: \nEnter 0 if you are done: ").strip()
+                userInput = input("Enter 1 if you would like to identify another image: \nEnter 0 if you are done: ").strip()
         
-                if user_input.isdigit():
-                    again = int(user_input)
+                if userInput.isdigit():
+                    again = int(userInput)
 
                     if again == 1:
                         break
                     elif again == 0:
-                        print("Thank You, Goodbye.")
+                        print("\nThank You, Goodbye.")
                         exit()
                     else:
-                        print("Character entered was not a 1 or 0, please try again.")
+                        print("\nCharacter entered was not a 1 or 0, please try again.")
                 else:
-                    print("Invalid input. Please enter a valid number (1 or 0).")
+                    print("\nInvalid input. Please enter a valid number (1 or 0).")
         except ValueError:
-            print("Invalid input. Please enter a valid number (1 or 0).")
+            print("\nInvalid input. Please enter a valid number (1 or 0).")
