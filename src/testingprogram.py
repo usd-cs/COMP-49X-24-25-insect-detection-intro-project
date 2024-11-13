@@ -125,8 +125,8 @@ if __name__ == "__main__":
         endTime = time.time()
         executionTime = round((endTime - startTime) * 1000, 2)
         confidenceScore = round(confidenceScore * 100, 2)
-        print(f"\nWe identified the image to be the character: {predictedCharacter}")
-        print(f"We have confidence of {confidenceScore}\n")
+        print(f"\nWe identified the image to be the digit: {predictedCharacter}")
+        print(f"We have a confidence of {confidenceScore}\n")
         print(f"Digit Identified in {executionTime} ms\n")
         try:
             while True:
