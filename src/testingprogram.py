@@ -18,7 +18,7 @@ class TestingProgram:
         self.model.fc = torch.nn.Linear(numFeatures, 10)
         # use CPU to allow general usability and Metal Performance Shader if user has Apple Silicon
 
-        self.device = torch.device("cpu")
+        self.device = torch.device("mps" if torch.backends.mps.is_built() else "cpu")
         self.model = self.model.to(self.device)
 
     def takeInput(self):
@@ -51,7 +51,7 @@ class TestingProgram:
             transforms.Grayscale(num_output_channels=3),
             transforms.Resize(self.height),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # mean and stdev for RGB channels
+            transforms.Normalize(mean=[0.5], std=[0.5]), # mean and stdev for RGB channels
         ])
 
         transformedImage = transform(self.testImage)
@@ -97,45 +97,24 @@ class TestingProgram:
         return predictedCharacter, confidenceScore
     
 
-    def loadModelWeights(self, weightsFilePath = None):
+    def loadModelWeights(self, weightsFilePath = None, heightFilePath = None):
         """
-        Loads the specified model with weights stored in the file specified by filename.
+        Loads the specified model with weights and height stored in each file specified by filename.
 
         Returns: None
         """
         if weightsFilePath == None:
             weightsFilePath = input("Please input the file path of the saved weights for the trained model: ")
-
-        # Load weights from CSV into a DataFrame
+        if heightFilePath == None:
+            heightFilePath = input("Please input the file path of the saved height for the image input: ")
+        # Load weights from pth into a DataFrame
         try:
-            weightFile = open(weightsFilePath, 'r')
-            self.height = int(weightFile.readline().strip())
-            weights_df = pd.read_csv(weightsFilePath, skiprows=1)
+            heightFile = open(heightFilePath, 'r')
+            self.height = int(heightFile.readline().strip())
+            self.model.load_state_dict(torch.load(weightsFilePath, weights_only=True))
         except FileNotFoundError:
             print("Model Weights File Does Not Exist. Run Testing Program")
             return
-            
-        # Iterate through each parameter in the model
-        with torch.no_grad():
-            for name, param in self.model.named_parameters():
-                # Find the corresponding row with name in the DataFrame
-                weight_row = weights_df[weights_df['parameter_name'] == name]
-                
-                if not weight_row.empty:
-                    # Convert the 'values' string to a list of floats
-                    weight_array = ast.literal_eval(weight_row['values'].values[0])
-
-                    if len(weight_array) != param.numel():
-                        print(f"Error: The number of elements does not match for {name}. Skipping this parameter.")
-                        continue
-                    # Reshape if necessary
-                    # weight_array = [float(x) for x in weight_array]  # make sure all values are floats
-                    reshaped_weight = torch.tensor(weight_array).view(param.shape)
-
-                    param.data = reshaped_weight
-
-
-        # torch.save(self.model.state_dict(), 'model_weights.pth')
 
 
 if __name__ == "__main__":

@@ -65,7 +65,7 @@ class TrainingProgram:
             transforms.Grayscale(num_output_channels=3),
             transforms.Resize(self.height),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # mean and stdev for RGB channels
+            transforms.Normalize(mean=[0.5], std=[0.5]), # mean and stdev for RGB channels
         ])
         # use CPU to allow general usability and Metal Performance Shader if user has Apple Silicon
         self.device = torch.device('mps' if torch.backends.mps.is_built() else 'cpu')
@@ -118,28 +118,12 @@ class TrainingProgram:
 
         print(f"Accuracy: {100 * correct / total:.2f}%")
 
-    def saveWeights(self, filename):
-        weights = []
-
-        # check if file exists
-        file_obj = os.path.exists(filename)
-        if not file_obj:
-            with open(filename, "w") as file:
-                file.write('')
-            print(f"File, {filename}, created.")
-        # Iterate layers and save weights
-        for name, param in self.model.named_parameters():
-            weights.append({
-                "parameter_name": name,
-                "values": param.detach().cpu().numpy().flatten().tolist()
-            })
+    def saveWeights(self, filename, heightFilename):
+        with open(heightFilename, "w") as file:
+            file.write(str(self.height))
+        print(f"Height saved to, {heightFilename}.")
         
-        # save image input height to file for testing
-        file = open(filename, 'w')
-        file.write(str(self.height) + "\n")
-        # store into pandas dataframe to store in csv
-        df = pd.DataFrame(weights)
-        df.to_csv(filename, index=False)
+        torch.save(self.model.state_dict(), filename)
         print(f"Model weights saved to {filename}")
         
 
@@ -149,5 +133,6 @@ if __name__ == "__main__":
     tp.loadMachine()
     tp.trainMachine(5)
     tp.testMachine()
-    filename = input("Please enter a file to save weights to (csv format): ")
-    tp.saveWeights(filename)
+    filename = input("Please enter a file to save weights to (.pth format): ")
+    heightFilename = input("Please enter a file to save the standard image height to (.txt): ")
+    tp.saveWeights(filename, heightFilename)
