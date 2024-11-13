@@ -17,7 +17,8 @@ class TestingProgram:
         numFeatures = self.model.fc.in_features
         self.model.fc = torch.nn.Linear(numFeatures, 10)
         # use CPU to allow general usability and Metal Performance Shader if user has Apple Silicon
-        self.device = torch.device('mps' if torch.backends.mps.is_built() else 'cpu')
+
+        self.device = torch.device("cpu")
         self.model = self.model.to(self.device)
 
     def takeInput(self):
@@ -29,7 +30,8 @@ class TestingProgram:
         filePath = input("Please input a file path for an image to process: ")
 
         try:
-            f = Image.open(filePath)
+            # f = open(filePath, 'r')
+            f = Image.open(filePath).convert('RGB')
             self.testImage = f
             return True
 
@@ -75,23 +77,23 @@ class TestingProgram:
         Returns: (Letter identified, Percent accuracy)
         """
 
-        self.model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+        # self.model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
         self.model.eval()
 
         # Process the self.image object 
         processedImage = self.transformImage()
+        processedImage = processedImage.to(self.device)
 
         # Use torch.no_grad() to avoid gradient computation for inference
         with torch.no_grad():
             output = self.model(processedImage)
 
         # Get the predicted class and confidence score
-        _, predictedIndex = torch.max(output, 1) # ignore maximum value, but get its index
+        _, predictedIndex = torch.max(output, 1)
         confidenceScore = torch.nn.functional.softmax(output, dim=1)[0][predictedIndex].item()
         # predictedCharacter = chr(predictedIndex.item())
         predictedCharacter = predictedIndex.item()
 
-        # Return the predicted class and confidence score
         return predictedCharacter, confidenceScore
     
 
@@ -116,7 +118,7 @@ class TestingProgram:
         # Iterate through each parameter in the model
         with torch.no_grad():
             for name, param in self.model.named_parameters():
-                # Find the corresponding row in the DataFrame
+                # Find the corresponding row with name in the DataFrame
                 weight_row = weights_df[weights_df['parameter_name'] == name]
                 
                 if not weight_row.empty:
@@ -127,20 +129,19 @@ class TestingProgram:
                         print(f"Error: The number of elements does not match for {name}. Skipping this parameter.")
                         continue
                     # Reshape if necessary
-                    weight_array = [float(x) for x in weight_array]  # make sure all values are floats
+                    # weight_array = [float(x) for x in weight_array]  # make sure all values are floats
                     reshaped_weight = torch.tensor(weight_array).view(param.shape)
 
                     param.data = reshaped_weight
 
 
-        torch.save(self.model.state_dict(), 'model_weights.pth')
+        # torch.save(self.model.state_dict(), 'model_weights.pth')
 
 
 if __name__ == "__main__":
     testingProgram = TestingProgram()
     print("\n\n------------   Welcome to Character Identifier!   ------------\n\n")
 
-    # pass the fresh model with the the trained weights into the loadModelWeights method
     testingProgram.loadModelWeights()
 
     while(True):
