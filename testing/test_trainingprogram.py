@@ -1,9 +1,10 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 import numpy as np
 import io
 import sys
 import os
+import torch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
@@ -40,23 +41,36 @@ class TestUserInput(unittest.TestCase):
         # just check that function prints something as proof of the machine being loaded
         self.assertNotEqual(outValue, None)
 
-    # mock machine properly saves weights to csv file
-    @patch("sys.stdout", new_callable=io.StringIO)
-    def testSavesMachine(self, stdOut):
-        # create mock machine model
+    # mock machine properly saves weights to path and txt file
+    @patch("torch.save")
+    @patch("builtins.open", new_callable=mock_open)
+    def testSavesMachine(self, mockOpenFile, mockSaveTorch):
+        # Mock the model and its state_dict
         mockModel = MagicMock()
-        mockModel.named_parameters.return_value = [
-            ("layer1.weight", MagicMock(data=np.random.rand(64, 3, 7, 7))),
-            ("layer2.weight", MagicMock(data=np.random.rand(128, 64, 3, 3))),
-        ]
+        mockModel.state_dict.return_value = {
+            "layer1.weight": torch.randn(64, 3, 7, 7),
+            "layer2.weight": torch.randn(128, 64, 3, 3),
+        }
+
+        # Mock filenames
+        weightFilename = "test.pth"
+        heightFilename = "test.txt"
+
         tp = TrainingProgram()
         tp.model = mockModel
-        tp.saveWeights('test.csv')
-        outValue = stdOut.getvalue().strip()
-        self.assertEqual(outValue, "File, test.csv, created.\nModel weights saved to test.csv")
-        # remove csv file after testing
-        if os.path.exists('test.csv'):
-            os.remove('test.csv')
+        tp.height = 28
+
+        tp.saveWeights(weightFilename, heightFilename)
+
+        # Verify the height file and torch save
+        mockOpenFile.assert_called_once_with(heightFilename, "w")
+        mockOpenFile().write.assert_called_once_with("28")  # Height as a string
+
+        mockSaveTorch.assert_called_once_with(mockModel.state_dict(), weightFilename)
+        if os.path.exists(weightFilename):
+            os.remove(weightFilename)
+        if os.path.exists(heightFilename):
+            os.remove(heightFilename)
 
 
 if __name__ == "__main__":
