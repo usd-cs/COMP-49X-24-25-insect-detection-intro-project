@@ -65,15 +65,15 @@ class TestUserChoice(unittest.TestCase):
 
 
     @patch('builtins.open', side_effect=FileNotFoundError)
-    @patch('sys.stdout', new_callable=StringIO)
-    def testLoadModelWeightsFileNotFoundMessage(self, mockStdout, mockOpen):
+    @patch('sys.exit')
+    def testLoadModelWeightsFileNotFoundMessage(self, mockSysExit, mockOpen):
         testingInstance = TestingProgram()
         
         # Call loadModelWeights with false file paths
-        testingInstance.loadModelWeights("nonexistent_weights.pth", "nonexistent_height.txt")
+        testingInstance.loadModelWeights("nonExistentWeights.pth", "nonExistentHeight.txt")
         
-        # Assert that the correct error message was printed
-        self.assertIn("Model Weights File Does Not Exist. Run Testing Program", mockStdout.getvalue())
+        # Assert that the system exits with 1
+        mockSysExit.assert_called_once_with(1)
 
 if __name__ == "__main__":
     unittest.main()

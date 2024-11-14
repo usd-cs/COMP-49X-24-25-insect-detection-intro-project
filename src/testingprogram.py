@@ -2,6 +2,7 @@ from torchvision import models, transforms
 import torch
 from PIL import Image
 import time
+import sys
 
 class TestingProgram:
     
@@ -108,8 +109,8 @@ class TestingProgram:
             self.height = int(heightFile.readline().strip())
             self.model.load_state_dict(torch.load(weightsFilePath, weights_only=True))
         except FileNotFoundError:
-            print("Model Weights File Does Not Exist. Run Testing Program")
-            return
+            print("Model Weights File or Height File Does Not Exist. Run Testing Program.")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
